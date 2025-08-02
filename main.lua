@@ -1,83 +1,68 @@
--- NORRUENR HUB (GokuTheme)
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local userAllowed = {
+-- NORRUENR Hub | Goku Theme
+
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Library.CreateLib("🌌 NORRUENR HUB (Goku Theme)", "Ocean")
+
+-- Nút tròn ẩn/hiện menu
+local CoreGui = game:GetService("CoreGui")
+local toggleGUI = Instance.new("ScreenGui", CoreGui)
+toggleGUI.Name = "NUH_Toggle"
+local btn = Instance.new("ImageButton", toggleGUI)
+btn.Position = UDim2.new(0, 8, 0.3, 0)
+btn.Size = UDim2.new(0, 48, 0, 48)
+btn.Image = "rbxassetid://3926307971"
+btn.BackgroundTransparency = 1
+local menuOpen = true
+btn.MouseButton1Click:Connect(function()
+    menuOpen = not menuOpen
+    for _, v in ipairs(CoreGui:GetChildren()) do
+        if v.Name == "KavoUI" then
+            v.Enabled = menuOpen
+        end
+    end
+end)
+
+-- Admin bằng TÊN NGƯỜI DÙNG
+local AdminNames = {
     ["hung111111111146"] = true,
     ["Khikhibocon"] = true
 }
+local AdminPass = "delta123"
+local failCount = {}
 
--- UI button (menu tròn) ảnh Sasuke
-local btn = Instance.new("ImageButton")
-btn.Size = UDim2.new(0, 60, 0, 60)
-btn.Position = UDim2.new(0, 20, 0.5, -30)
-btn.Image = "rbxassetid://13116639556" -- Sasuke lạnh lùng
-btn.BackgroundTransparency = 1
-btn.Parent = game.CoreGui
-
--- Tạo UI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "NORRUENR_UI"
-ScreenGui.Parent = game.CoreGui
-
--- Giao diện chính
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 450, 0, 350)
-MainFrame.Position = UDim2.new(0.5, -225, 0.5, -175)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-MainFrame.Visible = false
-MainFrame.Parent = ScreenGui
-
--- Nền Goku
-local bg = Instance.new("ImageLabel")
-bg.Size = UDim2.new(1,0,1,0)
-bg.Image = "rbxassetid://13135976859" -- Goku Ultra Instinct
-bg.BackgroundTransparency = 1
-bg.ImageTransparency = 0.4
-bg.ZIndex = -1
-bg.Parent = MainFrame
-
--- Tiêu đề
-local title = Instance.new("TextLabel")
-title.Text = "NORRUENR HUB (GokuTheme)"
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundTransparency = 1
-title.Size = UDim2.new(1,0,0,40)
-title.Parent = MainFrame
-
--- Các danh mục
-local buttons = {
-    "Farm", "Event", "V4", "Sea", "Trái", "Code", "PvP", "Skill", "Admin"
-}
-
-for i, name in ipairs(buttons) do
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0.3, 0, 0, 30)
-    btn.Position = UDim2.new(0.05 + ((i-1)%3)*0.32, 0, 0.2 + math.floor((i-1)/3)*0.12, 0)
-    btn.Text = name
-    btn.Font = Enum.Font.Gotham
-    btn.TextSize = 14
-    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    btn.Parent = MainFrame
-
-    if name == "Admin" then
-        btn.MouseButton1Click:Connect(function()
-            if userAllowed[LocalPlayer.Name] then
-                game.StarterGui:SetCore("SendNotification", {
-                    Title = "Admin Mode",
-                    Text = "Quyền admin được bật!",
-                    Duration = 3
-                })
-            else
-                game.Players:Chat("kick "..LocalPlayer.Name)
-            end
-        end)
-    end
+function isAdmin()
+    return AdminNames[game.Players.LocalPlayer.Name] == true
 end
 
--- Toggle menu
-btn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = not MainFrame.Visible
+-- Tạo 9 tab
+local tabs = {}
+for i, name in ipairs({"Farm","Event","V4","Sea","Trái","Code","PvP","Skill","Admin"}) do
+    tabs[i] = Window:NewTab(name)
+end
+
+-- Admin UI
+local s9 = tabs[9]:NewSection("🔒 ADMIN")
+local inputPass
+s9:NewTextBox("Nhập mật khẩu admin","",function(txt)
+  inputPass = txt
+  local name = game.Players.LocalPlayer.Name
+  if isAdmin() and inputPass == AdminPass then
+    s9:NewLabel("✅ Đã mở quyền Admin (NORRUENR)")
+  else
+    failCount[name] = (failCount[name] or 0) + 1
+    s9:NewLabel("❌ Sai mật khẩu hoặc không có quyền")
+    if failCount[name] >= 10 then
+      warn("Người dùng "..name.." thử sai pass >10 lần")
+      pcall(function() game.Players.LocalPlayer:Kick("Không đủ quyền sử dụng HUB") end)
+    end
+  end
+end)
+
+-- Anti kick
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+local old = mt.__namecall
+mt.__namecall = newcclosure(function(self, ...)
+    if getnamecallmethod() == "Kick" then return end
+    return old(self, ...)
 end)
